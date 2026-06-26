@@ -410,7 +410,7 @@
 
   <script>
     // ── Config ─────────────────────────────────────────────────────────────
-    const API_URL = "https://edwur-coin-counter-app-api.hf.space";
+    const API_URL = "https://edwur-coin-counter-app-api.hf.space/detect";
 
     // ── State ──────────────────────────────────────────────────────────────
     let selectedFile = null;
@@ -492,7 +492,7 @@
         renderResult(data);
       } catch (err) {
         if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
-          showError("Cannot reach the API. Make sure the FastAPI server is running on https://edwur-coin-counter-app-api.hf.space.");
+          showError("Cannot reach the API. Make sure the FastAPI server is running on https://edwur-coin-counter-app-api.hf.space/detect.");
         } else {
           showError(err.message);
         }
