@@ -1,7 +1,3 @@
-# coin_counter_app_frontend
-A frontend app for counting coins from images!
-
----
 # Koin. — Frontend
 
 A minimal dark-themed web app for the Rupiah Coin Counter. Upload or capture a photo of Indonesian coins and instantly see how many there are and the total value.
