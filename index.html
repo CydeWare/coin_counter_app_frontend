@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Koin Counter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0D0D0F;
+      --surface:  #1A1A1E;
+      --border:   #2A2A30;
+      --gold:     #C9960C;
+      --gold-dim: #7A5A08;
+      --silver:   #B8BEC8;
+      --white:    #F0EFE9;
+      --muted:    #6B6B78;
+      --red:      #E05252;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100dvh;
+      padding: 24px 16px 40px;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.5rem;
+      color: var(--white);
+      letter-spacing: -0.02em;
+    }
+
+    .logo span {
+      color: var(--gold);
+    }
+
+    .tagline {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    /* ── Upload zone ── */
+    .upload-zone {
+      width: 100%;
+      max-width: 480px;
+      aspect-ratio: 4/3;
+      border: 1.5px dashed var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      /* overflow: hidden; */
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .upload-zone:hover, .upload-zone:focus-visible {
+      border-color: var(--gold-dim);
+      background: #1E1E23;
+      outline: none;
+    }
+
+    .upload-zone.dragover {
+      border-color: var(--gold);
+      background: #1E1E23;
+    }
+
+    .upload-zone img.preview {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 16px;
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      color: var(--muted);
+    }
+
+    .upload-hint {
+      text-align: center;
+    }
+
+    .upload-hint strong {
+      display: block;
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--silver);
+      margin-bottom: 4px;
+    }
+
+    .upload-hint small {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* ── Action buttons row ── */
+    .actions {
+      width: 100%;
+      max-width: 480px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn:active { transform: scale(0.97); opacity: 0.85; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .btn-camera {
+      background: var(--gold);
+      color: #0D0D0F;
+    }
+
+    .btn-gallery {
+      background: var(--surface);
+      color: var(--white);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-detect {
+      grid-column: 1 / -1;
+      background: var(--white);
+      color: #0D0D0F;
+      padding: 14px;
+      font-size: 0.9375rem;
+    }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(13,13,15,0.3);
+      border-top-color: #0D0D0F;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result card ── */
+    .result-card {
+      width: 100%;
+      max-width: 480px;
+      margin-top: 24px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      /* overflow: hidden; */
+      display: none;
+    }
+
+    .result-card.visible { display: block; }
+
+    .result-image-wrap {
+        width: 100%;
+        max-height: 300px;
+        background: #111;
+        /* overflow: hidden; */
+    }
+
+    .result-image-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .result-body {
+      padding: 20px;
+    }
+
+    .result-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .total-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .coin-count-label {
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+
+    .coin-count-label strong {
+      color: var(--silver);
+      font-weight: 600;
+    }
+
+    .total-value {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 2.75rem;
+      letter-spacing: -0.03em;
+      color: var(--gold);
+      line-height: 1;
+      margin: 8px 0 18px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 16px;
+    }
+
+    .breakdown-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .breakdown-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: #0D0D0F;
+      border: 1.5px solid var(--border);
+    }
+
+    .chip-denom {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.875rem;
+      color: var(--white);
+    }
+
+    .chip-x {
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .chip-count {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--gold);
+    }
+
+    /* ── Error banner ── */
+    .error-banner {
+      width: 100%;
+      max-width: 480px;
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(224, 82, 82, 0.1);
+      border: 1.5px solid rgba(224, 82, 82, 0.3);
+      border-radius: 10px;
+      font-size: 0.8125rem;
+      color: var(--red);
+      display: none;
+    }
+
+    .error-banner.visible { display: block; }
+
+    /* ── hidden inputs ── */
+    #fileCamera, #fileGallery { display: none; }
+
+    /* ── responsive tweak ── */
+    @media (min-width: 520px) {
+      .total-value { font-size: 3.25rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .spinner { animation: none; border-top-color: var(--muted); }
+      .total-value { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Koin<span>.</span></div>
+    <div class="tagline">Rupiah coin counter</div>
+  </header>
+
+  <!-- Upload / preview zone -->
+  <div class="upload-zone" id="dropZone" tabindex="0" role="button" aria-label="Tap to choose an image">
+    <svg class="upload-icon" id="uploadIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M3 16.5V19a2 2 0 002 2h14a2 2 0 002-2v-2.5
+           M16 10l-4-4m0 0L8 10m4-4v12" />
+    </svg>
+    <div class="upload-hint" id="uploadHint">
+      <strong>Drop a photo here</strong>
+      <small>or use the buttons below</small>
+    </div>
+    <img class="preview" id="previewImg" src="" alt="Preview" style="display:none" />
+  </div>
+
+  <!-- Action buttons -->
+  <div class="actions">
+    <button class="btn btn-camera" id="btnCamera">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+        <circle cx="12" cy="13" r="3" stroke-linecap="round" />
+      </svg>
+      Camera
+    </button>
+    <button class="btn btn-gallery" id="btnGallery">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14
+             M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+      Gallery
+    </button>
+    <button class="btn btn-detect" id="btnDetect" disabled>
+      <div class="spinner" id="spinner"></div>
+      <span id="detectLabel">Count coins</span>
+    </button>
+  </div>
+
+  <!-- Hidden file inputs -->
+  <input type="file" id="fileCamera" accept="image/*" capture="environment" />
+  <input type="file" id="fileGallery" accept="image/*" />
+
+  <!-- Error -->
+  <div class="error-banner" id="errorBanner"></div>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+    <div class="result-image-wrap">
+      <img id="resultImg" src="" alt="Annotated result" />
+    </div>
+    <div class="result-body">
+      <div class="result-row">
+        <div class="total-label">Total</div>
+        <div class="coin-count-label" id="coinCountLabel"></div>
+      </div>
+      <div class="total-value" id="totalValue">Rp 0</div>
+      <div class="divider"></div>
+      <div class="breakdown-label">Breakdown</div>
+      <div class="breakdown-chips" id="breakdownChips"></div>
+    </div>
+  </div>
+
+  <script>
+    // ── Config ─────────────────────────────────────────────────────────────
+    const API_URL = "http://localhost:8000/detect";
+
+    // ── State ──────────────────────────────────────────────────────────────
+    let selectedFile = null;
+
+    // ── DOM refs ───────────────────────────────────────────────────────────
+    const dropZone      = document.getElementById("dropZone");
+    const uploadIcon    = document.getElementById("uploadIcon");
+    const uploadHint    = document.getElementById("uploadHint");
+    const previewImg    = document.getElementById("previewImg");
+    const btnCamera     = document.getElementById("btnCamera");
+    const btnGallery    = document.getElementById("btnGallery");
+    const btnDetect     = document.getElementById("btnDetect");
+    const detectLabel   = document.getElementById("detectLabel");
+    const spinner       = document.getElementById("spinner");
+    const fileCamera    = document.getElementById("fileCamera");
+    const fileGallery   = document.getElementById("fileGallery");
+    const errorBanner   = document.getElementById("errorBanner");
+    const resultCard    = document.getElementById("resultCard");
+    const resultImg     = document.getElementById("resultImg");
+    const totalValue    = document.getElementById("totalValue");
+    const coinCountLabel= document.getElementById("coinCountLabel");
+    const breakdownChips= document.getElementById("breakdownChips");
+
+    // ── File selection ─────────────────────────────────────────────────────
+    function setFile(file) {
+      if (!file || !file.type.startsWith("image/")) {
+        showError("Please select a valid image file.");
+        return;
+      }
+      selectedFile = file;
+      const url = URL.createObjectURL(file);
+      previewImg.src = url;
+      previewImg.style.display = "block";
+      uploadIcon.style.display = "none";
+      uploadHint.style.display = "none";
+      btnDetect.disabled = false;
+      hideError();
+      resultCard.classList.remove("visible");
+    }
+
+    btnCamera.addEventListener("click", () => fileCamera.click());
+    btnGallery.addEventListener("click", () => fileGallery.click());
+    dropZone.addEventListener("click", () => fileGallery.click());
+    dropZone.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") fileGallery.click(); });
+
+    fileCamera.addEventListener("change", e => e.target.files[0] && setFile(e.target.files[0]));
+    fileGallery.addEventListener("change", e => e.target.files[0] && setFile(e.target.files[0]));
+
+    // Drag & drop
+    dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("dragover"); });
+    dropZone.addEventListener("dragleave",  () => dropZone.classList.remove("dragover"));
+    dropZone.addEventListener("drop", e => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      const file = e.dataTransfer.files[0];
+      if (file) setFile(file);
+    });
+
+    // ── Detection ──────────────────────────────────────────────────────────
+    btnDetect.addEventListener("click", detect);
+
+    async function detect() {
+      if (!selectedFile) return;
+
+      setLoading(true);
+      hideError();
+      resultCard.classList.remove("visible");
+
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      try {
+        const res = await fetch(API_URL, { method: "POST", body: formData });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || `Server error ${res.status}`);
+        }
+        const data = await res.json();
+        renderResult(data);
+      } catch (err) {
+        if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
+          showError("Cannot reach the API. Make sure the FastAPI server is running on localhost:8000.");
+        } else {
+          showError(err.message);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // ── Render result ──────────────────────────────────────────────────────
+    function renderResult(data) {
+      const { coin_count, total_value, breakdown, annotated_image } = data;
+
+      resultImg.src = `data:image/jpeg;base64,${annotated_image}`;
+      coinCountLabel.innerHTML = `<strong>${coin_count}</strong> coin${coin_count !== 1 ? "s" : ""} found`;
+
+      // Denomination chips
+      breakdownChips.innerHTML = "";
+      const denomOrder = ["500", "200", "100"];
+      denomOrder.forEach(denom => {
+        if (!breakdown[denom]) return;
+        const chip = document.createElement("div");
+        chip.className = "chip";
+        chip.innerHTML = `
+          <span class="chip-denom">Rp ${parseInt(denom).toLocaleString("id-ID")}</span>
+          <span class="chip-x">×</span>
+          <span class="chip-count">${breakdown[denom]}</span>
+        `;
+        breakdownChips.appendChild(chip);
+      });
+
+      resultCard.classList.add("visible");
+      animateTotal(total_value);
+
+      // Scroll into view
+      setTimeout(() => totalValue.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
+    }
+
+    // ── Cash-register counter animation ───────────────────────────────────
+    function animateTotal(target) {
+      const duration = 900;
+      const start = performance.now();
+      const startVal = 0;
+
+      function tick(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out quart
+        const eased = 1 - Math.pow(1 - progress, 4);
+        const current = Math.round(startVal + (target - startVal) * eased);
+        totalValue.textContent = `Rp ${current.toLocaleString("id-ID")}`;
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+    function setLoading(on) {
+      btnDetect.disabled = on;
+      spinner.style.display = on ? "block" : "none";
+      detectLabel.textContent = on ? "Counting…" : "Count coins";
+    }
+
+    function showError(msg) {
+      errorBanner.textContent = msg;
+      errorBanner.classList.add("visible");
+    }
+
+    function hideError() {
+      errorBanner.classList.remove("visible");
+    }
+  </script>
+</body>
+</html>
