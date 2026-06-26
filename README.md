@@ -2,62 +2,59 @@
 A frontend app for counting coins from images!
 
 ---
+# Koin. — Frontend
 
-# Rupiah Coin Counter — FastAPI Backend
+A minimal dark-themed web app for the Rupiah Coin Counter. Upload or capture a photo of Indonesian coins and instantly see how many there are and the total value.
 
-## Setup
+## Usage
 
+Just open `index.html` in your browser. No build step, no dependencies — it's plain HTML, CSS, and JavaScript.
+
+Make sure the FastAPI backend is running first:
 ```bash
-pip install -r requirements.txt
-```
-
-## Run
-
-```bash
+# Either run main.py directly in VS Code, or:
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## Endpoints
+Then open `index.html` and you're good to go.
 
-| Method | Path      | Description |
-|--------|-----------|-------------|
-| GET    | `/`       | Health check |
-| POST   | `/detect` | Detect coins in an image |
+## Features
 
-## `/detect` — Request
+- **Camera** — opens your device camera directly (defaults to rear camera on mobile)
+- **Gallery** — pick an existing photo from your file system or gallery
+- **Drag & drop** — drag an image onto the upload zone on desktop
+- **Annotated result** — shows the original photo with green circles drawn on each detected coin and its denomination label
+- **Animated total** — the Rp amount ticks up like a cash register when results arrive
+- **Breakdown chips** — shows how many of each denomination was found (Rp 500, Rp 200, Rp 100)
 
-- Content-Type: `multipart/form-data`
-- Field: `file` — any JPEG/PNG image
+## How it works
 
-## `/detect` — Response
+1. You select or capture a photo
+2. On "Count coins", the image is sent to the FastAPI backend at `localhost:8000/detect`
+3. The backend runs the coin detection model and returns the annotated image, coin count, total value, and denomination breakdown
+4. The frontend displays everything — annotated image, total Rp, and per-denomination counts
 
-```json
-{
-  "coin_count": 18,
-  "total_value": 4800,
-  "breakdown": {
-    "100": 6,
-    "200": 7,
-    "500": 5
-  },
-  "annotated_image": "<base64-encoded JPEG>"
-}
+## Coin labels
+
+| Circle color | Meaning |
+|---|---|
+| 🟢 Green | Valid coin — counted toward total |
+| 🟣 Magenta | Reference badge (blue pin) — used for size calibration, not counted |
+| ⚫ Gray | Circle detected but radius didn't match any denomination |
+| 🔴 Red | Failed validity check — likely a false positive |
+
+## Configuration
+
+The API URL is set at the top of the `<script>` block in `index.html`:
+
+```js
+const API_URL = "http://localhost:8000/detect";
 ```
 
-- `annotated_image` is a base64 JPEG you can display as `<img src="data:image/jpeg;base64,...">`
-- Green circles = valid coins with denomination label
-- Magenta circle = reference badge (not counted)
-- Gray circles = radius didn't match any denomination
-- Red circles = failed fill-ratio validity check
+Change this if your backend runs on a different host or port.
 
-## How the model works (from `project_improved.ipynb`)
+## Supported coins
 
-1. **Resize** image to 800px width
-2. **CLAHE** contrast enhancement + median blur
-3. **Hough Circle Transform** to detect circles
-4. **Reference circle** detection — looks for a blue-tinted circle (the painted badge in your photos), used as a size reference
-5. **Scaled-radius clustering** — each coin's radius is divided by the reference radius, then matched to pre-computed centroids:
-   - `0.724` → Rp 100
-   - `0.788` → Rp 200
-   - `0.852` → Rp 500
-6. **Fill-ratio validity check** — rejects circles that don't have enough foreground pixels (e.g. false positives on dark backgrounds)
+- Rp 100
+- Rp 200
+- Rp 500
